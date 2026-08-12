@@ -2258,6 +2258,135 @@ const ReportesTulaModule = (() => {
     mostrarPestañaReportes
   };
 })();
+
+<!-- TUS SCRIPTS ANTERIORES SE CIERRAN AQUÍ -->
   </script>
+
+<!-- CONEXIÓN ÚNICA A FIREBASE FIRESTORE -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    deleteDoc, 
+    doc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // 1. REEMPLAZA ESTOS VALORES CON TUS CLAVES REALES DE FIREBASE CONSOLE
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCPFCT6HAXT6DkN-9O_5xIEzEaYCBwPzXA",
+  authDomain: "bolsa-de-trabajo-67706.firebaseapp.com",
+  projectId: "bolsa-de-trabajo-67706",
+  storageBucket: "bolsa-de-trabajo-67706.firebasestorage.app",
+  messagingSenderId: "459908752242",
+  appId: "1:459908752242:web:41ad22dc6789f33291f3eb",
+  measurementId: "G-G8JY1FVEF5"
+};
+
+  // 2. INICIALIZAR
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const vacantesRef = collection(db, "vacantes");
+
+  // 3. ESCUCHAR CAMBIOS EN TIEMPO REAL
+  onSnapshot(vacantesRef, (snapshot) => {
+    const listaVacantes = [];
+    snapshot.forEach((documento) => {
+      listaVacantes.push({ id: documento.id, ...documento.data() });
+    });
+
+    // Sincronizar con la memoria local y variables globales
+    window.vacantes = listaVacantes;
+    localStorage.setItem('bt_vacantes', JSON.stringify(listaVacantes));
+
+    // Refrescar la vista pública con tus filtros
+    if (typeof window.filterVacantesPublicas === "function") {
+      window.filterVacantesPublicas();
+    }
+  });
+
+  // 4. FUNCIONES PARA AGREGAR Y BORRAR DESDE TUS BOTONES
+  window.agregarVacanteNube = async (nuevaVacante) => {
+    try {
+      await addDoc(vacantesRef, nuevaVacante);
+    } catch (error) {
+      console.error("Error al publicar vacante:", error);
+    }
+  };
+
+  window.borrarVacanteNube = async (id) => {
+    try {
+      await deleteDoc(doc(db, "vacantes", id));
+    } catch (error) {
+      console.error("Error al borrar vacante:", error);
+    }
+  };
+</script>  
+
+<!-- CÓDIGO ÚNICO DE FIREBASE SIN ERRORES DE REDECLARACIÓN -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    deleteDoc, 
+    doc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const configFirebase = {
+    apiKey: "AIzaSyCPFCT6HAXT6DkN-9O_5xIEzEaYCBwPzXA",
+    authDomain: "bolsa-de-trabajo-67706.firebaseapp.com",
+    projectId: "bolsa-de-trabajo-67706",
+    storageBucket: "bolsa-de-trabajo-67706.firebasestorage.app",
+    messagingSenderId: "459908752242",
+    appId: "1:459908752242:web:41ad22dc6789f33291f3eb",
+    measurementId: "G-G8JY1FVEF5"
+  };
+
+  // Inicialización segura sin duplicados
+  const appInstancia = getApps().length === 0 ? initializeApp(configFirebase) : getApps()[0];
+  const dbInstancia = getFirestore(appInstancia);
+  const referenciaVacantes = collection(dbInstancia, "vacantes");
+
+  // Escuchar cambios en tiempo real
+  onSnapshot(referenciaVacantes, (snapshot) => {
+    const listaVacantes = [];
+    snapshot.forEach((documento) => {
+      listaVacantes.push({ id: documento.id, ...documento.data() });
+    });
+
+    window.vacantes = listaVacantes;
+    localStorage.setItem('bt_vacantes', JSON.stringify(listaVacantes));
+
+    if (typeof window.filterVacantesPublicas === "function") {
+      window.filterVacantesPublicas();
+    } else if (typeof window.renderizarVacantes === "function") {
+      window.renderizarVacantes(listaVacantes);
+    }
+  });
+
+  // Funciones globales de escritura y borrado
+  window.agregarVacanteNube = async (nuevaVacante) => {
+    try {
+      await addDoc(referenciaVacantes, nuevaVacante);
+    } catch (e) {
+      console.error("Error al guardar:", e);
+    }
+  };
+
+  window.borrarVacanteNube = async (id) => {
+    try {
+      await deleteDoc(doc(dbInstancia, "vacantes", id));
+    } catch (e) {
+      console.error("Error al borrar:", e);
+    }
+  };
+</script>
+
 </body>
-</html> 
+</html>
