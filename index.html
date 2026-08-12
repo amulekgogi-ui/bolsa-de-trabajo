@@ -2388,5 +2388,84 @@ const firebaseConfig = {
   };
 </script>
 
+<!-- CONEXIÓN DEFINITIVA A FIREBASE (AÑADIR, EDITAR Y ELIMINAR) -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    doc, 
+    updateDoc, 
+    deleteDoc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  (function() {
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPFCT6HAXT6DkN-9O_5xIEzEaYCBwPzXA",
+      authDomain: "bolsa-de-trabajo-67706.firebaseapp.com",
+      projectId: "bolsa-de-trabajo-67706",
+      storageBucket: "bolsa-de-trabajo-67706.firebasestorage.app",
+      messagingSenderId: "459908752242",
+      appId: "1:459908752242:web:41ad22dc6789f33291f3eb",
+      measurementId: "G-G8JY1FVEF5"
+    };
+
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    const db = getFirestore(app);
+    const vacantesRef = collection(db, "vacantes");
+
+    // 1. SINCRONIZACIÓN EN TIEMPO REAL
+    onSnapshot(vacantesRef, (snapshot) => {
+      const listaVacantes = [];
+      snapshot.forEach((documento) => {
+        listaVacantes.push({ id: documento.id, ...documento.data() });
+      });
+
+      window.vacantes = listaVacantes;
+      localStorage.setItem('bt_vacantes', JSON.stringify(listaVacantes));
+
+      if (typeof window.filterVacantesPublicas === "function") {
+        window.filterVacantesPublicas();
+      }
+      if (typeof window.renderVacantesAdmin === "function") {
+        window.renderVacantesAdmin();
+      } else if (typeof window.renderizarVacantes === "function") {
+        window.renderizarVacantes(listaVacantes);
+      }
+    });
+
+    // 2. FUNCIONES GLOBALES PARA FIREBASE
+    window.agregarVacanteNube = async (nuevaVacante) => {
+      try {
+        const datos = { ...nuevaVacante };
+        delete datos.id;
+        await addDoc(vacantesRef, datos);
+      } catch (e) {
+        console.error("Error al añadir:", e);
+      }
+    };
+
+    window.editarVacanteNube = async (id, vacanteEditada) => {
+      try {
+        const datos = { ...vacanteEditada };
+        delete datos.id;
+        const docRef = doc(db, "vacantes", id);
+        await updateDoc(docRef, datos);
+      } catch (e) {
+        console.error("Error al editar:", e);
+      }
+    };
+
+    window.borrarVacanteNube = async (id) => {
+      try {
+        await deleteDoc(doc(db, "vacantes", id));
+      } catch (e) {
+        console.error("Error al borrar:", e);
+      }
+    };
+  })();
+</script>
 </body>
 </html>
