@@ -2493,5 +2493,167 @@ const firebaseConfig = {
   })();
 </script>
 
+<!-- PARCHE DEFINITIVO Y AUTOMÁTICO DE FIREBASE PARA AÑADIR, EDITAR Y BORRAR -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    doc, 
+    updateDoc, 
+    deleteDoc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  (function() {
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPFCT6HAXT6DkN-9O_5xIEzEaYCBwPzXA",
+      authDomain: "bolsa-de-trabajo-67706.firebaseapp.com",
+      projectId: "bolsa-de-trabajo-67706",
+      storageBucket: "bolsa-de-trabajo-67706.firebasestorage.app",
+      messagingSenderId: "459908752242",
+      appId: "1:459908752242:web:41ad22dc6789f33291f3eb",
+      measurementId: "G-G8JY1FVEF5"
+    };
+
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    const db = getFirestore(app);
+    const vacantesRef = collection(db, "vacantes");
+
+    // 1. SINCRONIZAR Y FORZAR DATOS EXCLUSIVOS DE LA NUBE
+    onSnapshot(vacantesRef, (snapshot) => {
+      const listaVacantes = [];
+      snapshot.forEach((documento) => {
+        listaVacantes.push({ id: documento.id, ...documento.data() });
+      });
+
+      // Sobrescribe todo en memoria para asegurar que prevalezca la nube
+      window.vacantes = listaVacantes;
+      localStorage.setItem('bt_vacantes', JSON.stringify(listaVacantes));
+
+      // Dispara la actualización de tus pantallas
+      if (typeof window.filterVacantesPublicas === "function") window.filterVacantesPublicas();
+      if (typeof window.renderVacantesAdmin === "function") window.renderVacantesAdmin();
+      if (typeof window.renderizarVacantes === "function") window.renderizarVacantes(listaVacantes);
+    });
+
+    // 2. FUNCIONES CONECTADAS DIRECTO A LA BASE DE DATOS
+    window.agregarVacanteNube = async (nuevaVacante) => {
+      const datos = { ...nuevaVacante };
+      delete datos.id;
+      await addDoc(vacantesRef, datos);
+    };
+
+    window.editarVacanteNube = async (id, vacanteEditada) => {
+      const datos = { ...vacanteEditada };
+      delete datos.id;
+      const docRef = doc(db, "vacantes", id);
+      await updateDoc(docRef, datos);
+    };
+
+    window.borrarVacanteNube = async (id) => {
+      await deleteDoc(doc(db, "vacantes", id));
+    };
+
+    // 3. INTERCEPTOR QUE DESVIARÁ TU FORMULARIO LOCAL HACIA LA NUBE
+    document.addEventListener('submit', async function (e) {
+      const form = e.target;
+      if (form) {
+        // Capturar los campos del formulario
+        const formData = new FormData(form);
+        const objetoVacante = {};
+        formData.forEach((value, key) => { objetoVacante[key] = value; });
+
+        // Asegurar campos clave si no usan atributo 'name'
+        if (!objetoVacante.puesto && document.getElementById('puesto')) objetoVacante.puesto = document.getElementById('puesto').value;
+        if (!objetoVacante.empresa && document.getElementById('empresa')) objetoVacante.empresa = document.getElementById('empresa').value;
+
+        // Si detecta un formulario de vacantes, cancela el guardado local y lo manda a Firebase
+        if (objetoVacante.puesto || form.id === 'formVacante' || form.id === 'vacanteForm') {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const idEditar = window.vacanteEditandoId || document.getElementById('vacanteId')?.value;
+
+          if (idEditar) {
+            await window.editarVacanteNube(idEditar, objetoVacante);
+            window.vacanteEditandoId = null;
+          } else {
+            await window.agregarVacanteNube(objetoVacante);
+          }
+
+          form.reset();
+          if (typeof window.cerrarModal === 'function') window.cerrarModal();
+        }
+      }
+    }, true);
+
+  })();
+</script>
+
+<!-- CONEXIÓN DEFINITIVA A FIREBASE (AÑADIR, EDITAR Y BORRAR) -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    doc, 
+    updateDoc, 
+    deleteDoc, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  (function() {
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPFCT6HAXT6DkN-9O_5xIEzEaYCBwPzXA",
+      authDomain: "bolsa-de-trabajo-67706.firebaseapp.com",
+      projectId: "bolsa-de-trabajo-67706",
+      storageBucket: "bolsa-de-trabajo-67706.firebasestorage.app",
+      messagingSenderId: "459908752242",
+      appId: "1:459908752242:web:41ad22dc6789f33291f3eb",
+      measurementId: "G-G8JY1FVEF5"
+    };
+
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    const db = getFirestore(app);
+    const vacantesRef = collection(db, "vacantes");
+
+    // 1. Escuchar cambios en tiempo real desde la nube
+    onSnapshot(vacantesRef, (snapshot) => {
+      const listaVacantes = [];
+      snapshot.forEach((documento) => {
+        listaVacantes.push({ id: documento.id, ...documento.data() });
+      });
+
+      window.vacantes = listaVacantes;
+      localStorage.setItem('bt_vacantes', JSON.stringify(listaVacantes));
+
+      if (typeof window.filterVacantesPublicas === "function") window.filterVacantesPublicas();
+      if (typeof window.renderVacantesAdmin === "function") window.renderVacantesAdmin();
+      if (typeof window.renderizarVacantes === "function") window.renderizarVacantes(listaVacantes);
+    });
+
+    // 2. Funciones globales para conectar con tus botones
+    window.agregarVacanteNube = async (nuevaVacante) => {
+      const datos = { ...nuevaVacante };
+      delete datos.id;
+      await addDoc(vacantesRef, datos);
+    };
+
+    window.editarVacanteNube = async (id, vacanteEditada) => {
+      const datos = { ...vacanteEditada };
+      delete datos.id;
+      const docRef = doc(db, "vacantes", id);
+      await updateDoc(docRef, datos);
+    };
+
+    window.borrarVacanteNube = async (id) => {
+      await deleteDoc(doc(db, "vacantes", id));
+    };
+  })();
+</script>
+
 </body>
 </html>
