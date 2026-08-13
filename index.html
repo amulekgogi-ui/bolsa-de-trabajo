@@ -917,7 +917,7 @@
             <h4>Atención por WhatsApp</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.5rem 0 1rem 0;">Respuesta rápida para resolver problemas de registro.</p>
             <a href="https://wa.me/527737320189" target="_blank" class="btn btn-success" style="width: 100%; font-size: 0.85rem;">
-              <i class="fa-brands fa-whatsapp"></i> Contactar por WhatsApp
+              <i class="fa-brands fa-whatsapp"></i> Contactar por WhatsApp al 773 1002 181
             </a>
           </div>
 
@@ -926,7 +926,7 @@
             <h4>Línea Telefónica Directa</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0.5rem 0 1rem 0;">Atención de Lunes a Viernes de 08:00 a 16:00 hrs.</p>
             <a href="tel:7737320189" class="btn" style="width: 100%; font-size: 0.85rem;">
-              <i class="fa-solid fa-phone"></i> Llamar al (773) 732 0189
+              <i class="fa-solid fa-phone"></i> Llamar al (773) 1002 181
             </a>
           </div>
         </div>
@@ -1356,48 +1356,8 @@
     localStorage.setItem('bt_page_visits', visitas);
 
     let currentUser = JSON.parse(localStorage.getItem('bt_user_session')) || null;
-    let vacantes = JSON.parse(localStorage.getItem('bt_vacantes')) || [
-      {
-        id: 1,
-        empresa: "Cooperativa La Cruz Azul",
-        puesto: "Supervisora / Técnico de Control de Calidad",
-        ubicacion: "Ciudad Cooperativa Cruz Azul, Tula de Allende, Hgo.",
-        sueldo: 18500,
-        turno: "Diurno",
-        contrato: "Permanente",
-        horarios: "08:00 a 16:30 hrs",
-        experiencia: "2 años en planta industrial o laboratorio",
-        escolaridad: "Ingeniería Industrial / Química",
-        sexo: "Indistinto",
-        licencia: "Requerida / Vigente",
-        edadMin: 22,
-        edadMax: 50,
-        prestaciones: "Sí",
-        capacitacion: "Pagada",
-        expiraFecha: Date.now() + (2 * 24 * 60 * 60 * 1000),
-        fechaCreacion: Date.now() - (5 * 24 * 60 * 60 * 1000)
-      },
-      {
-        id: 2,
-        empresa: "Refinería Miguel Hidalgo",
-        puesto: "Técnico Mantenimiento Industrial",
-        ubicacion: "Carretera Tula-Jorobas Km 26.5, Tula de Allende, Hgo.",
-        sueldo: 17500,
-        turno: "Rotativo",
-        contrato: "Permanente",
-        horarios: "07:00 a 15:00 / 15:00 a 23:00",
-        experiencia: "2 años comprobables",
-        escolaridad: "Técnico Superior / Carrera Trunca",
-        sexo: "Masculino",
-        licencia: "Requerida / Vigente",
-        edadMin: 20,
-        edadMax: 50,
-        prestaciones: "Sí",
-        capacitacion: "Pagada",
-        expiraFecha: Date.now() + (30 * 24 * 60 * 60 * 1000),
-        fechaCreacion: Date.now() - (10 * 24 * 60 * 60 * 1000)
-      }
-    ];
+    let vacantes = JSON.parse(localStorage.getItem('bt_vacantes')) || [];
+      
     let postulaciones = JSON.parse(localStorage.getItem('bt_postulaciones')) || [];
 
     let canvas, ctx, drawing = false;
@@ -2468,7 +2428,7 @@ const firebaseConfig = {
   })();
 </script>
 
-<!-- SOLUCIÓN INTEGRAL PARA AÑADIR, EDITAR Y BORRAR EN TIEMPO REAL CON FIREBASE -->
+<!-- CÓDIGO DE SINCRONIZACIÓN PERMANENTE EN LA NUBE (FIREBASE) -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { 
@@ -2496,23 +2456,24 @@ const firebaseConfig = {
     const db = getFirestore(app);
     const vacantesRef = collection(db, "vacantes");
 
-    // 1. ESCUCHAR Y SINCRONIZAR CAMBIOS EN TIEMPO REAL
+    // 1. ESCUCHAR Y FORZAR DATOS DESDE LA NUBE
     onSnapshot(vacantesRef, (snapshot) => {
       const listaVacantes = [];
       snapshot.forEach((documento) => {
         listaVacantes.push({ id: documento.id, ...documento.data() });
       });
 
+      // Sobrescribe la variable global y actualiza el respaldo
       window.vacantes = listaVacantes;
       localStorage.setItem('bt_vacantes', JSON.stringify(listaVacantes));
 
-      // Actualizar vistas si existen las funciones
+      // Re-renderiza las vistas
       if (typeof window.filterVacantesPublicas === "function") window.filterVacantesPublicas();
       if (typeof window.renderVacantesAdmin === "function") window.renderVacantesAdmin();
       if (typeof window.renderizarVacantes === "function") window.renderizarVacantes(listaVacantes);
     });
 
-    // 2. OPERACIONES FIREBASE
+    // 2. OPERACIONES DIRECTAS EN FIREBASE
     window.agregarVacanteNube = async (nuevaVacante) => {
       const datos = { ...nuevaVacante };
       delete datos.id;
@@ -2529,43 +2490,6 @@ const firebaseConfig = {
     window.borrarVacanteNube = async (id) => {
       await deleteDoc(doc(db, "vacantes", id));
     };
-
-    // 3. INTERCEPTOR AUTOMÁTICO DE FORMULARIOS (CREAR Y EDITAR)
-    document.addEventListener('submit', async function (e) {
-      // Revisa si el formulario enviado es el de vacantes
-      const form = e.target;
-      if (form && (form.id === 'formVacante' || form.id === 'vacanteForm' || form.querySelector('[name="puesto"], #puesto'))) {
-        e.preventDefault(); // Detiene el guardado local por defecto
-
-        // Captura todos los campos del formulario automáticamente
-        const formData = new FormData(form);
-        const objetoVacante = {};
-        formData.forEach((value, key) => {
-          objetoVacante[key] = value;
-        });
-
-        // Respaldos por ID si FormData no captura por atributo 'name'
-        if (!objetoVacante.puesto && document.getElementById('puesto')) objetoVacante.puesto = document.getElementById('puesto').value;
-        if (!objetoVacante.empresa && document.getElementById('empresa')) objetoVacante.empresa = document.getElementById('empresa').value;
-        if (!objetoVacante.sueldo && document.getElementById('sueldo')) objetoVacante.sueldo = document.getElementById('sueldo').value;
-
-        // Detectar si estamos EDITANDO (si hay una variable global o campo oculto con id)
-        const idEditar = window.vacanteEditandoId || document.getElementById('vacanteId')?.value;
-
-        if (idEditar) {
-          await window.editarVacanteNube(idEditar, objetoVacante);
-          window.vacanteEditandoId = null;
-        } else {
-          await window.agregarVacanteNube(objetoVacante);
-        }
-
-        form.reset();
-        
-        // Cerrar modal si existe la función en tu código
-        if (typeof window.cerrarModal === 'function') window.cerrarModal();
-      }
-    }, true);
-
   })();
 </script>
 
